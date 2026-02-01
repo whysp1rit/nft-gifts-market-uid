@@ -91,11 +91,20 @@ def api_create_deal():
         user_exists = cursor.fetchone()[0] > 0
         
         if not user_exists:
-            # Создаем нового пользователя с 0 баланса
+            # Генерируем уникальный UID для нового пользователя
+            import random
+            import string
+            while True:
+                uid = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+                cursor.execute('SELECT uid FROM users WHERE uid = ?', (uid,))
+                if not cursor.fetchone():
+                    break
+            
+            # Создаем нового пользователя с UID и 0 баланса
             cursor.execute('''
-                INSERT INTO users (telegram_id, username, first_name, balance_stars, balance_rub, successful_deals)
-                VALUES (?, ?, ?, 0, 0, 0)
-            ''', (telegram_id, username, first_name))
+                INSERT INTO users (uid, telegram_id, username, first_name, balance_stars, balance_rub, successful_deals, verified)
+                VALUES (?, ?, ?, ?, 0, 0, 0, FALSE)
+            ''', (uid, telegram_id, username, first_name))
         else:
             # Обновляем только имя и username, НЕ трогая баланс
             cursor.execute('''
