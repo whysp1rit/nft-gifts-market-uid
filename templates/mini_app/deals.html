@@ -231,7 +231,7 @@ function viewDeal(button) {
 
 function shareDeal(button) {
     const dealId = button.getAttribute('data-deal-id');
-    const dealUrl = `https://t.me/your_bot_username/app?startapp=deal_${dealId}`;
+    const dealUrl = `https://t.me/noscamnftrbot/app?startapp=deal_${dealId}`;
     const text = `🎁 Привет! Я создал сделку для продажи NFT подарка. Можешь безопасно купить по этой ссылке: ${dealUrl}`;
     shareLink(dealUrl, text);
 }
@@ -239,4 +239,5 @@ function shareDeal(button) {
 // Обновление сделок каждые 30 секунд
 setInterval(loadDeals, 30000);
 </script>
+
 {% endblock %}
