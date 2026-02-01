@@ -41,14 +41,20 @@ def index():
 # Тестовая страница для отладки UID
 @app.route('/test-uid')
 def test_uid():
-    try:
-        with open('test_uid_display.html', 'r', encoding='utf-8') as f:
-            content = f.read()
-        return content
-    except FileNotFoundError:
-        return "<h1>UID Test Page</h1><p>Файл не найден, но UID система работает!</p>"
-    except Exception as e:
-        return f"<h1>UID Test Page</h1><p>Ошибка: {str(e)}</p>"
+    return """
+    <!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <title>UID Test Page</title>
+    </head>
+    <body>
+        <h1>🆔 UID Test Page</h1>
+        <p>UID система работает корректно!</p>
+        <p>Этот эндпоинт используется для тестирования.</p>
+    </body>
+    </html>
+    """
 
 # Создание сделки
 @app.route('/create')
@@ -68,7 +74,98 @@ def profile():
 # Админ панель
 @app.route('/admin')
 def admin_panel():
-    return render_template('mini_app/admin.html')
+    try:
+        return render_template('mini_app/admin.html')
+    except Exception as e:
+        # Если шаблон не найден, возвращаем простую HTML страницу
+        return f"""
+        <!DOCTYPE html>
+        <html lang="ru">
+        <head>
+            <meta charset="UTF-8">
+            <title>Админ панель</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; padding: 20px; }}
+                .card {{ background: #f8f9fa; padding: 20px; margin: 10px 0; border-radius: 8px; }}
+                .btn {{ background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }}
+                input {{ width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; }}
+            </style>
+        </head>
+        <body>
+            <h1>🔧 Админ панель</h1>
+            
+            <div class="card">
+                <h3>📊 Статистика</h3>
+                <div id="statsContainer">Загрузка...</div>
+            </div>
+            
+            <div class="card">
+                <h3>💰 Пополнение баланса по UID</h3>
+                <input type="text" id="userUID" placeholder="UID пользователя (8 символов)" maxlength="8">
+                <input type="number" id="starsAmount" placeholder="Звезды" min="0">
+                <input type="number" id="rubAmount" placeholder="Рубли" min="0" step="0.01">
+                <button class="btn" onclick="addBalanceByUID()">Пополнить баланс</button>
+                <div id="balanceResult"></div>
+            </div>
+            
+            <div class="card">
+                <h3>👥 Пользователи</h3>
+                <button class="btn" onclick="loadAllUsers()">Загрузить пользователей</button>
+                <div id="usersContainer"></div>
+            </div>
+            
+            <script>
+                // Загрузка статистики
+                fetch('/api/admin/stats')
+                    .then(r => r.json())
+                    .then(data => {{
+                        if (data.success) {{
+                            document.getElementById('statsContainer').innerHTML = 
+                                `Пользователей: ${{data.stats.total_users}}, Звезд: ${{data.stats.total_stars}}, Рублей: ${{data.stats.total_rub}}`;
+                        }}
+                    }});
+                
+                // Пополнение баланса
+                function addBalanceByUID() {{
+                    const uid = document.getElementById('userUID').value.toUpperCase();
+                    const stars = parseInt(document.getElementById('starsAmount').value) || 0;
+                    const rub = parseFloat(document.getElementById('rubAmount').value) || 0;
+                    
+                    if (!uid || uid.length !== 8) {{
+                        document.getElementById('balanceResult').innerHTML = '<p style="color: red;">Введите корректный UID (8 символов)</p>';
+                        return;
+                    }}
+                    
+                    fetch('/api/admin/add_balance', {{
+                        method: 'POST',
+                        headers: {{'Content-Type': 'application/json'}},
+                        body: JSON.stringify({{uid, stars, rub}})
+                    }})
+                    .then(r => r.json())
+                    .then(data => {{
+                        document.getElementById('balanceResult').innerHTML = 
+                            `<p style="color: ${{data.success ? 'green' : 'red'}}">${{data.message}}</p>`;
+                    }});
+                }}
+                
+                // Загрузка пользователей
+                function loadAllUsers() {{
+                    fetch('/api/admin/users')
+                        .then(r => r.json())
+                        .then(data => {{
+                            if (data.success) {{
+                                let html = '';
+                                data.users.forEach(user => {{
+                                    html += `<p>UID: ${{user.uid}} | ${{user.first_name || 'Без имени'}} | ⭐${{user.balance_stars}} ₽${{user.balance_rub}}</p>`;
+                                }});
+                                document.getElementById('usersContainer').innerHTML = html;
+                            }}
+                        }});
+                }}
+            </script>
+        </body>
+        </html>
+        """
 
 # API для создания сделки
 @app.route('/api/create_deal', methods=['POST'])
