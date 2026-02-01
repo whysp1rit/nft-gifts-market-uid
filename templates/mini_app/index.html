@@ -1,0 +1,122 @@
+{% extends "mini_app/base.html" %}
+
+{% block title %}NFT Gifts Market - Главная{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 style="margin-bottom: 16px; color: var(--tg-theme-text-color);">
+        🎁 Добро пожаловать в NFT Gifts Market!
+    </h2>
+    <p style="color: var(--tg-theme-hint-color); margin-bottom: 16px;">
+        Безопасная торговля NFT подарками Telegram с гарантией сделок
+    </p>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0;">
+        <div style="text-align: center; padding: 16px; background: var(--tg-theme-bg-color); border-radius: 8px; border: 1px solid var(--tg-theme-hint-color);">
+            <div style="font-size: 24px; font-weight: bold; color: var(--tg-theme-link-color);">1,247</div>
+            <div style="font-size: 12px; color: var(--tg-theme-hint-color);">Успешных сделок</div>
+        </div>
+        <div style="text-align: center; padding: 16px; background: var(--tg-theme-bg-color); border-radius: 8px; border: 1px solid var(--tg-theme-hint-color);">
+            <div style="font-size: 24px; font-weight: bold; color: var(--tg-theme-link-color);">892</div>
+            <div style="font-size: 12px; color: var(--tg-theme-hint-color);">Активных трейдеров</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3 style="margin-bottom: 12px;">🚀 Быстрые действия</h3>
+    
+    <button class="btn" onclick="navigateTo('/create')">
+        ➕ Создать сделку
+    </button>
+    
+    <button class="btn btn-secondary" onclick="navigateTo('/deals')">
+        📋 Мои сделки
+    </button>
+</div>
+
+<div class="card">
+    <h3 style="margin-bottom: 12px;">💡 Как это работает?</h3>
+    
+    <div style="margin: 12px 0;">
+        <div style="display: flex; align-items: center; margin: 8px 0;">
+            <div style="width: 24px; height: 24px; background: var(--tg-theme-link-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 12px; font-weight: bold;">1</div>
+            <span style="font-size: 14px;">Создайте сделку с NFT подарком</span>
+        </div>
+        <div style="display: flex; align-items: center; margin: 8px 0;">
+            <div style="width: 24px; height: 24px; background: var(--tg-theme-link-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 12px; font-weight: bold;">2</div>
+            <span style="font-size: 14px;">Отправьте ссылку покупателю</span>
+        </div>
+        <div style="display: flex; align-items: center; margin: 8px 0;">
+            <div style="width: 24px; height: 24px; background: var(--tg-theme-link-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 12px; font-weight: bold;">3</div>
+            <span style="font-size: 14px;">Получите оплату безопасно</span>
+        </div>
+        <div style="display: flex; align-items: center; margin: 8px 0;">
+            <div style="width: 24px; height: 24px; background: var(--tg-theme-link-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 12px; font-weight: bold;">4</div>
+            <span style="font-size: 14px;">Переведите NFT и завершите сделку</span>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3 style="margin-bottom: 12px;">🛡️ Гарантии безопасности</h3>
+    
+    <div style="display: flex; align-items: center; margin: 8px 0;">
+        <span style="margin-right: 8px;">✅</span>
+        <span style="font-size: 14px;">Эскроу система защиты средств</span>
+    </div>
+    <div style="display: flex; align-items: center; margin: 8px 0;">
+        <span style="margin-right: 8px;">✅</span>
+        <span style="font-size: 14px;">Проверка подлинности NFT</span>
+    </div>
+    <div style="display: flex; align-items: center; margin: 8px 0;">
+        <span style="margin-right: 8px;">✅</span>
+        <span style="font-size: 14px;">Поддержка 24/7</span>
+    </div>
+    <div style="display: flex; align-items: center; margin: 8px 0;">
+        <span style="margin-right: 8px;">✅</span>
+        <span style="font-size: 14px;">Возврат средств при отмене</span>
+    </div>
+</div>
+
+<div class="card" style="text-align: center; background: linear-gradient(135deg, var(--tg-theme-link-color, #2481cc), var(--tg-theme-button-color, #2481cc)); color: white; border: none;">
+    <h3 style="margin-bottom: 8px;">🎯 Начните торговать прямо сейчас!</h3>
+    <p style="margin-bottom: 16px; opacity: 0.9;">Присоединяйтесь к тысячам успешных трейдеров</p>
+    <button class="btn" style="background: rgba(255,255,255,0.2); color: white;" onclick="navigateTo('/create')">
+        Создать первую сделку
+    </button>
+</div>
+
+{% if user %}
+<div class="alert alert-info">
+    <strong>👋 Привет, {{ user.first_name }}!</strong><br>
+    Вы авторизованы и можете создавать сделки
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Показываем информацию о пользователе если доступна
+    if (window.telegramUser) {
+        console.log('Пользователь:', window.telegramUser);
+        
+        // Можно добавить персонализацию
+        const welcomeCard = document.querySelector('.card h2');
+        if (welcomeCard && window.telegramUser.first_name) {
+            welcomeCard.innerHTML = `🎁 Привет, ${window.telegramUser.first_name}!`;
+        }
+    }
+    
+    // Настройка главной кнопки Telegram
+    if (window.telegramWebApp) {
+        window.telegramWebApp.MainButton.setText('Создать сделку');
+        window.telegramWebApp.MainButton.onClick(() => {
+            navigateTo('/create');
+        });
+        window.telegramWebApp.MainButton.show();
+    }
+});
+</script>
+{% endblock %}

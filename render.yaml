@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: nft-gifts-market
+    env: python
+    buildCommand: pip install -r requirements_deploy.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT mini_app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
