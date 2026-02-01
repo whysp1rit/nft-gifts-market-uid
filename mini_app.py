@@ -41,9 +41,14 @@ def index():
 # Тестовая страница для отладки UID
 @app.route('/test-uid')
 def test_uid():
-    with open('test_uid_display.html', 'r', encoding='utf-8') as f:
-        content = f.read()
-    return content
+    try:
+        with open('test_uid_display.html', 'r', encoding='utf-8') as f:
+            content = f.read()
+        return content
+    except FileNotFoundError:
+        return "<h1>UID Test Page</h1><p>Файл не найден, но UID система работает!</p>"
+    except Exception as e:
+        return f"<h1>UID Test Page</h1><p>Ошибка: {str(e)}</p>"
 
 # Создание сделки
 @app.route('/create')
