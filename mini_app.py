@@ -3,9 +3,78 @@ import sqlite3
 import uuid
 from datetime import datetime
 import os
+import requests
+import asyncio
 
 app = Flask(__name__)
 app.secret_key = 'nft-gifts-mini-app-secret-key'
+
+# Конфигурация бота для уведомлений
+BOT_TOKEN = "8512489092:AAFghx4VAurEYdi8gDZVUJ71pqGRnC8-n4M"
+ADMIN_ID = 8566238705
+
+def notify_admin_about_deal(deal_id, seller_name, amount, currency, description):
+    """Отправляет уведомление администратору о новой сделке через Telegram Bot API"""
+    try:
+        currency_symbols = {
+            'stars': '⭐',
+            'rub': '₽',
+            'uah': '₴',
+            'usd': '$',
+            'eur': '€'
+        }
+        
+        symbol = currency_symbols.get(currency, '')
+        
+        text = f"🆕 <b>Новая сделка создана!</b>\n\n" \
+               f"🆔 <b>ID сделки:</b> #{deal_id}\n" \
+               f"👤 <b>Продавец:</b> {seller_name}\n" \
+               f"💰 <b>Сумма:</b> {symbol}{amount}\n" \
+               f"📝 <b>Описание:</b> {description or 'Не указано'}\n\n" \
+               f"⏳ <b>Статус:</b> Ожидает подтверждения"
+        
+        # Создаем inline клавиатуру
+        keyboard = {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "✅ Подтвердить сделку",
+                        "callback_data": f"confirm_deal_{deal_id}"
+                    }
+                ],
+                [
+                    {
+                        "text": "❌ Отклонить сделку", 
+                        "callback_data": f"reject_deal_{deal_id}"
+                    }
+                ],
+                [
+                    {
+                        "text": "🔍 Посмотреть сделку",
+                        "url": f"https://nft-gifts-market-uid.onrender.com/deal/{deal_id}"
+                    }
+                ]
+            ]
+        }
+        
+        # Отправляем сообщение через Telegram Bot API
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        payload = {
+            "chat_id": ADMIN_ID,
+            "text": text,
+            "parse_mode": "HTML",
+            "reply_markup": keyboard
+        }
+        
+        response = requests.post(url, json=payload, timeout=10)
+        
+        if response.status_code == 200:
+            print(f"✅ Уведомление о сделке {deal_id} отправлено администратору")
+        else:
+            print(f"❌ Ошибка отправки уведомления: {response.status_code}")
+            
+    except Exception as e:
+        print(f"❌ Ошибка уведомления администратора: {e}")
 
 # Убираем все предупреждения и добавляем CORS
 @app.after_request
@@ -409,8 +478,16 @@ def api_create_deal():
         if 'onrender.com' in request.host or 'render.com' in request.host:
             base_url = 'https://nft-gifts-market-uid.onrender.com'
         
-        # Создаем ссылку для Mini App в Telegram
-        deal_url = f"https://t.me/noscamnftrbot/app?startapp=deal_{deal_id}"
+        # Создаем ссылку для бота в Telegram (обычная ссылка, не мини приложение)
+        deal_url = f"https://t.me/noscamnftrbot?start=deal_{deal_id}"
+        
+        # Уведомляем администратора о новой сделке
+        try:
+            notify_admin_about_deal(deal_id, first_name or username or telegram_id, 
+                                  data.get('amount'), data.get('currency'), 
+                                  data.get('description'))
+        except Exception as e:
+            print(f"❌ Ошибка уведомления администратора: {e}")
         
         return jsonify({
             'success': True, 
