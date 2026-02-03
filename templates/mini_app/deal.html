@@ -88,6 +88,16 @@
 let currentDeal = null;
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Отладочная информация
+    console.log('=== ОТЛАДКА ПАРАМЕТРОВ СДЕЛКИ ===');
+    console.log('URL:', window.location.href);
+    console.log('Deal ID из URL:', '{{ deal_id }}');
+    
+    if (window.telegramWebApp) {
+        console.log('Telegram WebApp initData:', window.telegramWebApp.initDataUnsafe);
+        console.log('Start param:', window.telegramWebApp.initDataUnsafe?.start_param);
+    }
+    
     loadDealInfo();
     
     // Настройка главной кнопки Telegram
@@ -124,7 +134,7 @@ function renderDealInfo(deal) {
         'stars': '⭐',
         'rub': '₽',
         'uah': '₴',
-        'usd': '$',
+        'usd': '$',$',
         'eur': '€'
     };
     

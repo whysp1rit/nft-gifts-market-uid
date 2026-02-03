@@ -267,13 +267,30 @@
         
         // Обработка параметра startapp для прямого перехода к сделке
         let startParam = tg.initDataUnsafe?.start_param;
+        
+        // Проверяем разные способы получения параметра
+        if (!startParam) {
+            // Пробуем получить из URL
+            const urlParams = new URLSearchParams(window.location.search);
+            startParam = urlParams.get('tgWebAppStartParam');
+        }
+        
+        // Также проверяем параметр startapp из URL
+        if (!startParam) {
+            const urlParams = new URLSearchParams(window.location.search);
+            startParam = urlParams.get('startapp');
+        }
+        
+        console.log('Start param:', startParam);
+        console.log('Init data:', tg.initDataUnsafe);
+        
         if (startParam && startParam.startsWith('deal_')) {
             let dealId = startParam.replace('deal_', '');
             console.log('Переход к сделке:', dealId);
             // Перенаправляем на страницу сделки
             setTimeout(() => {
                 window.location.href = '/deal/' + dealId;
-            }, 1000);
+            }, 500);
         }
         
         // Навигация
@@ -303,7 +320,7 @@
             }
             
             // Показываем админ вкладку для админа (ID из config.ini)
-            if (window.telegramUser && window.telegramUser.id == 8566238705) {
+            if (window.telegramUser && window.telegramUser.id == 8463760149) {
                 document.getElementById('adminTab').style.display = 'block';
             } else {
                 document.getElementById('adminTab').style.display = 'none';

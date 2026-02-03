@@ -2,8 +2,16 @@ services:
   - type: web
     name: nft-gifts-market
     env: python
-    buildCommand: pip install -r requirements_deploy.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT mini_app:app
+    buildCommand: "pip install -r requirements.txt && python init_db.py"
+    startCommand: "python mini_app.py"
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.0
+        value: 3.9.16
+      - key: BOT_TOKEN
+        sync: false
+      - key: ADMIN_ID  
+        sync: false
+      - key: API_ID
+        sync: false
+      - key: API_HASH
+        sync: false

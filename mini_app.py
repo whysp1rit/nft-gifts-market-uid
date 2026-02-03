@@ -21,16 +21,30 @@ def after_request(response):
 
 # Инициализация единой базы данных для Mini App
 def init_mini_app_db():
-    conn = sqlite3.connect('data/unified.db')
-    cursor = conn.cursor()
-    
-    # Таблицы уже созданы в unified_database.py
-    # Просто проверяем подключение
-    cursor.execute('SELECT COUNT(*) FROM users')
-    user_count = cursor.fetchone()[0]
-    print(f"📊 Подключение к единой базе: {user_count} пользователей")
-    
-    conn.close()
+    """Инициализирует базу данных или проверяет подключение"""
+    try:
+        # Создаем папку data если её нет
+        os.makedirs('data', exist_ok=True)
+        
+        conn = sqlite3.connect('data/unified.db')
+        cursor = conn.cursor()
+        
+        # Проверяем, существует ли таблица users
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+        if not cursor.fetchone():
+            print("📊 База данных не найдена. Запустите init_db.py для инициализации.")
+            conn.close()
+            return
+        
+        # Проверяем подключение
+        cursor.execute('SELECT COUNT(*) FROM users')
+        user_count = cursor.fetchone()[0]
+        print(f"📊 Подключение к единой базе: {user_count} пользователей")
+        
+        conn.close()
+    except Exception as e:
+        print(f"❌ Ошибка подключения к БД: {e}")
+        print("💡 Запустите init_db.py для создания базы данных")
 
 # Главная страница Mini App
 @app.route('/')
@@ -41,20 +55,80 @@ def index():
 # Тестовая страница для отладки UID
 @app.route('/test-uid')
 def test_uid():
+    """Простая тестовая страница для проверки UID системы"""
     return """
     <!DOCTYPE html>
     <html lang="ru">
     <head>
         <meta charset="UTF-8">
         <title>UID Test Page</title>
+        <style>
+            body { font-family: Arial, sans-serif; padding: 20px; text-align: center; }
+            .card { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px auto; max-width: 400px; }
+        </style>
     </head>
     <body>
-        <h1>🆔 UID Test Page</h1>
-        <p>UID система работает корректно!</p>
-        <p>Этот эндпоинт используется для тестирования.</p>
+        <div class="card">
+            <h1>🆔 UID Test Page</h1>
+            <p>UID система работает корректно!</p>
+            <p>Этот эндпоинт используется для тестирования.</p>
+            <button onclick="window.location.href='/'">🏠 На главную</button>
+        </div>
     </body>
     </html>
     """
+
+# Тестовая страница для отладки параметров startapp
+@app.route('/test-startapp')
+def test_startapp():
+    """Страница для отладки параметров startapp"""
+    return """
+    <!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <title>StartApp Parameters Test</title>
+        <script src="https://telegram.org/js/telegram-web-app.js"></script>
+        <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            .info { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; }
+            pre { background: #e9ecef; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        </style>
+    </head>
+    <body>
+        <h1>🔗 Тест параметров StartApp</h1>
+        <div id="info"></div>
+        <button onclick="window.location.href='/'">🏠 На главную</button>
+        
+        <script>
+            let tg = window.Telegram.WebApp;
+            tg.ready();
+            
+            const info = document.getElementById('info');
+            const initData = tg.initDataUnsafe;
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            info.innerHTML = `
+                <div class="info">
+                    <h3>Данные инициализации:</h3>
+                    <pre>${JSON.stringify(initData, null, 2)}</pre>
+                </div>
+                <div class="info">
+                    <h3>URL параметры:</h3>
+                    <pre>${JSON.stringify(Object.fromEntries(urlParams), null, 2)}</pre>
+                </div>
+                <div class="info">
+                    <h3>Полный URL:</h3>
+                    <pre>${window.location.href}</pre>
+                </div>
+            `;
+        </script>
+    </body>
+    </html>
+    """
+    with open('test_startapp_params.html', 'r', encoding='utf-8') as f:
+        content = f.read()
+    return content
 
 # Создание сделки
 @app.route('/create')
@@ -77,7 +151,7 @@ def admin_panel():
     try:
         return render_template('mini_app/admin.html')
     except Exception as e:
-        # Если шаблон не найден, возвращаем простую HTML страницу
+        # Если шаблон не найден, возвращаем встроенную HTML страницу
         html_content = """
         <!DOCTYPE html>
         <html lang="ru">
@@ -85,56 +159,109 @@ def admin_panel():
             <meta charset="UTF-8">
             <title>Админ панель</title>
             <style>
-                body { font-family: Arial, sans-serif; padding: 20px; }
-                .card { background: #f8f9fa; padding: 20px; margin: 10px 0; border-radius: 8px; }
-                .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
-                input { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; }
+                body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+                .card { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+                .btn:hover { background: #0056b3; }
+                input { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+                .success { color: green; }
+                .error { color: red; }
+                .user-item { padding: 10px; border-bottom: 1px solid #eee; }
+                .user-item:last-child { border-bottom: none; }
             </style>
         </head>
         <body>
-            <h1>🔧 Админ панель</h1>
+            <h1>🔧 Админ панель NFT Gifts Market</h1>
             
             <div class="card">
-                <h3>📊 Статистика</h3>
-                <div id="statsContainer">Загрузка...</div>
+                <h3>📊 Статистика системы</h3>
+                <div id="statsContainer">⏳ Загрузка статистики...</div>
             </div>
             
             <div class="card">
                 <h3>💰 Пополнение баланса по UID</h3>
-                <input type="text" id="userUID" placeholder="UID пользователя (8 символов)" maxlength="8">
-                <input type="number" id="starsAmount" placeholder="Звезды" min="0">
-                <input type="number" id="rubAmount" placeholder="Рубли" min="0" step="0.01">
-                <button class="btn" onclick="addBalanceByUID()">Пополнить баланс</button>
+                <p>Введите UID пользователя (8 символов) и сумму для пополнения:</p>
+                <input type="text" id="userUID" placeholder="UID пользователя (например: A1B2C3D4)" maxlength="8" style="text-transform: uppercase;">
+                <input type="number" id="starsAmount" placeholder="Количество звезд" min="0">
+                <input type="number" id="rubAmount" placeholder="Сумма в рублях" min="0" step="0.01">
+                <button class="btn" onclick="addBalanceByUID()">💰 Пополнить баланс</button>
                 <div id="balanceResult"></div>
             </div>
             
             <div class="card">
-                <h3>👥 Пользователи</h3>
-                <button class="btn" onclick="loadAllUsers()">Загрузить пользователей</button>
+                <h3>👥 Управление пользователями</h3>
+                <button class="btn" onclick="loadAllUsers()">📋 Загрузить всех пользователей</button>
                 <div id="usersContainer"></div>
             </div>
             
+            <div class="card">
+                <h3>📈 Быстрые действия</h3>
+                <button class="btn" onclick="window.location.href='/'">🏠 На главную</button>
+                <button class="btn" onclick="window.location.href='/test-uid'">🧪 Тест UID</button>
+                <button class="btn" onclick="window.location.href='/test-startapp'">🔗 Тест ссылок</button>
+            </div>
+            
             <script>
-                // Загрузка статистики
-                fetch('/api/admin/stats')
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.success) {
-                            document.getElementById('statsContainer').innerHTML = 
-                                'Пользователей: ' + data.stats.total_users + ', Звезд: ' + data.stats.total_stars + ', Рублей: ' + data.stats.total_rub;
-                        }
-                    });
+                // Загрузка статистики при открытии страницы
+                document.addEventListener('DOMContentLoaded', function() {
+                    loadStats();
+                });
                 
-                // Пополнение баланса
+                function loadStats() {
+                    fetch('/api/admin/stats')
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                const stats = data.stats;
+                                document.getElementById('statsContainer').innerHTML = `
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                                        <div style="text-align: center; padding: 15px; background: #e3f2fd; border-radius: 8px;">
+                                            <div style="font-size: 24px; font-weight: bold; color: #1976d2;">${stats.total_users}</div>
+                                            <div style="font-size: 12px; color: #666;">Всего пользователей</div>
+                                        </div>
+                                        <div style="text-align: center; padding: 15px; background: #e8f5e8; border-radius: 8px;">
+                                            <div style="font-size: 24px; font-weight: bold; color: #388e3c;">${stats.verified_users}</div>
+                                            <div style="font-size: 12px; color: #666;">Верифицированных</div>
+                                        </div>
+                                        <div style="text-align: center; padding: 15px; background: #fff3e0; border-radius: 8px;">
+                                            <div style="font-size: 24px; font-weight: bold; color: #f57c00;">⭐${stats.total_stars}</div>
+                                            <div style="font-size: 12px; color: #666;">Всего звезд</div>
+                                        </div>
+                                        <div style="text-align: center; padding: 15px; background: #fce4ec; border-radius: 8px;">
+                                            <div style="font-size: 24px; font-weight: bold; color: #c2185b;">₽${stats.total_rub}</div>
+                                            <div style="font-size: 12px; color: #666;">Всего рублей</div>
+                                        </div>
+                                        <div style="text-align: center; padding: 15px; background: #f3e5f5; border-radius: 8px;">
+                                            <div style="font-size: 24px; font-weight: bold; color: #7b1fa2;">${stats.total_deals}</div>
+                                            <div style="font-size: 12px; color: #666;">Всего сделок</div>
+                                        </div>
+                                    </div>
+                                `;
+                            } else {
+                                document.getElementById('statsContainer').innerHTML = '<p class="error">Ошибка загрузки статистики</p>';
+                            }
+                        })
+                        .catch(error => {
+                            document.getElementById('statsContainer').innerHTML = '<p class="error">Ошибка подключения к серверу</p>';
+                        });
+                }
+                
                 function addBalanceByUID() {
-                    const uid = document.getElementById('userUID').value.toUpperCase();
+                    const uid = document.getElementById('userUID').value.toUpperCase().trim();
                     const stars = parseInt(document.getElementById('starsAmount').value) || 0;
                     const rub = parseFloat(document.getElementById('rubAmount').value) || 0;
                     
                     if (!uid || uid.length !== 8) {
-                        document.getElementById('balanceResult').innerHTML = '<p style="color: red;">Введите корректный UID (8 символов)</p>';
+                        document.getElementById('balanceResult').innerHTML = '<p class="error">❌ Введите корректный UID (8 символов)</p>';
                         return;
                     }
+                    
+                    if (stars === 0 && rub === 0) {
+                        document.getElementById('balanceResult').innerHTML = '<p class="error">❌ Укажите сумму для пополнения</p>';
+                        return;
+                    }
+                    
+                    document.getElementById('balanceResult').innerHTML = '<p>⏳ Пополняем баланс...</p>';
                     
                     fetch('/api/admin/add_balance', {
                         method: 'POST',
@@ -143,98 +270,69 @@ def admin_panel():
                     })
                     .then(r => r.json())
                     .then(data => {
-                        document.getElementById('balanceResult').innerHTML = 
-                            '<p style="color: ' + (data.success ? 'green' : 'red') + '">' + data.message + '</p>';
+                        const className = data.success ? 'success' : 'error';
+                        const icon = data.success ? '✅' : '❌';
+                        document.getElementById('balanceResult').innerHTML = `<p class="${className}">${icon} ${data.message}</p>`;
+                        
+                        if (data.success) {
+                            // Очищаем поля после успешного пополнения
+                            document.getElementById('userUID').value = '';
+                            document.getElementById('starsAmount').value = '';
+                            document.getElementById('rubAmount').value = '';
+                            
+                            // Обновляем статистику
+                            loadStats();
+                        }
+                    })
+                    .catch(error => {
+                        document.getElementById('balanceResult').innerHTML = '<p class="error">❌ Ошибка подключения к серверу</p>';
                     });
                 }
                 
-                // Загрузка пользователей
                 function loadAllUsers() {
+                    document.getElementById('usersContainer').innerHTML = '<p>⏳ Загружаем пользователей...</p>';
+                    
                     fetch('/api/admin/users')
                         .then(r => r.json())
                         .then(data => {
                             if (data.success) {
-                                let html = '';
+                                let html = '<div style="max-height: 400px; overflow-y: auto;">';
                                 data.users.forEach(user => {
-                                    html += '<p>UID: ' + user.uid + ' | ' + (user.first_name || 'Без имени') + ' | ⭐' + user.balance_stars + ' ₽' + user.balance_rub + '</p>';
+                                    const verifiedIcon = user.verified ? '✅' : '❌';
+                                    html += `
+                                        <div class="user-item">
+                                            <strong>🆔 ${user.uid}</strong> | 
+                                            ${user.first_name || 'Без имени'} 
+                                            ${user.username ? '@' + user.username : ''}<br>
+                                            <small>
+                                                ID: ${user.telegram_id} | 
+                                                ⭐${user.balance_stars} ₽${user.balance_rub} | 
+                                                🤝${user.successful_deals} сделок | 
+                                                ${verifiedIcon} ${user.verified ? 'Верифицирован' : 'Не верифицирован'}
+                                            </small>
+                                        </div>
+                                    `;
                                 });
+                                html += '</div>';
                                 document.getElementById('usersContainer').innerHTML = html;
+                            } else {
+                                document.getElementById('usersContainer').innerHTML = '<p class="error">❌ Ошибка загрузки пользователей</p>';
                             }
+                        })
+                        .catch(error => {
+                            document.getElementById('usersContainer').innerHTML = '<p class="error">❌ Ошибка подключения к серверу</p>';
                         });
                 }
+                
+                // Автоматическое преобразование UID в верхний регистр
+                document.getElementById('userUID').addEventListener('input', function(e) {
+                    e.target.value = e.target.value.toUpperCase();
+                });
             </script>
         </body>
         </html>
         """
         return html_content
-            
-            <div class="card">
-                <h3>💰 Пополнение баланса по UID</h3>
-                <input type="text" id="userUID" placeholder="UID пользователя (8 символов)" maxlength="8">
-                <input type="number" id="starsAmount" placeholder="Звезды" min="0">
-                <input type="number" id="rubAmount" placeholder="Рубли" min="0" step="0.01">
-                <button class="btn" onclick="addBalanceByUID()">Пополнить баланс</button>
-                <div id="balanceResult"></div>
-            </div>
-            
-            <div class="card">
-                <h3>👥 Пользователи</h3>
-                <button class="btn" onclick="loadAllUsers()">Загрузить пользователей</button>
-                <div id="usersContainer"></div>
-            </div>
-            
-            <script>
-                // Загрузка статистики
-                fetch('/api/admin/stats')
-                    .then(r => r.json())
-                    .then(data => {{
-                        if (data.success) {{
-                            document.getElementById('statsContainer').innerHTML = 
-                                `Пользователей: ${{data.stats.total_users}}, Звезд: ${{data.stats.total_stars}}, Рублей: ${{data.stats.total_rub}}`;
-                        }}
-                    }});
-                
-                // Пополнение баланса
-                function addBalanceByUID() {{
-                    const uid = document.getElementById('userUID').value.toUpperCase();
-                    const stars = parseInt(document.getElementById('starsAmount').value) || 0;
-                    const rub = parseFloat(document.getElementById('rubAmount').value) || 0;
-                    
-                    if (!uid || uid.length !== 8) {{
-                        document.getElementById('balanceResult').innerHTML = '<p style="color: red;">Введите корректный UID (8 символов)</p>';
-                        return;
-                    }}
-                    
-                    fetch('/api/admin/add_balance', {{
-                        method: 'POST',
-                        headers: {{'Content-Type': 'application/json'}},
-                        body: JSON.stringify({{uid, stars, rub}})
-                    }})
-                    .then(r => r.json())
-                    .then(data => {{
-                        document.getElementById('balanceResult').innerHTML = 
-                            `<p style="color: ${{data.success ? 'green' : 'red'}}">${{data.message}}</p>`;
-                    }});
-                }}
-                
-                // Загрузка пользователей
-                function loadAllUsers() {{
-                    fetch('/api/admin/users')
-                        .then(r => r.json())
-                        .then(data => {{
-                            if (data.success) {{
-                                let html = '';
-                                data.users.forEach(user => {{
-                                    html += `<p>UID: ${{user.uid}} | ${{user.first_name || 'Без имени'}} | ⭐${{user.balance_stars}} ₽${{user.balance_rub}}</p>`;
-                                }});
-                                document.getElementById('usersContainer').innerHTML = html;
-                            }}
-                        }});
-                }}
-            </script>
-        </body>
-        </html>
-        """
 
 # API для создания сделки
 @app.route('/api/create_deal', methods=['POST'])
@@ -296,8 +394,8 @@ def api_create_deal():
         
         # Создаем сделку
         cursor.execute('''
-            INSERT INTO deals (id, seller_id, nft_link, nft_username, amount, currency, description)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO deals (id, seller_id, nft_link, nft_username, amount, currency, status, description)
+            VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
         ''', (deal_id, telegram_id, data.get('nft_link'), data.get('nft_username'), 
               data.get('amount'), data.get('currency'), data.get('description')))
         
@@ -306,6 +404,10 @@ def api_create_deal():
         
         # Получаем текущий хост для создания ссылки
         base_url = request.host_url.rstrip('/')
+        
+        # Если мы на Render, используем правильный домен
+        if 'onrender.com' in request.host or 'render.com' in request.host:
+            base_url = 'https://nft-gifts-market-uid.onrender.com'
         
         # Создаем ссылку для Mini App в Telegram
         deal_url = f"https://t.me/noscamnftrbot/app?startapp=deal_{deal_id}"
